@@ -55,3 +55,10 @@ int get_channel_subcycle_time_us(int channel);
 
 // Default pulse-width-increment-granularity
 #define PULSE_WIDTH_INCREMENT_GRANULARITY_US_DEFAULT 10
+
+
+// here's some lower-level stuff added by Jeremy Stanley <jstanley0@gmail.com>
+// to simplify controlling multiple LEDs on a single DMA channel
+int frd_init_pwm(int channel, int gpio_mask);
+int frd_clear(int channel, int pos, int gpio_mask);
+int frd_set_high(int channel, int pos, int gpio_mask);

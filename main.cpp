@@ -37,11 +37,11 @@ int main(int argc, char **argv)
         SDL_Delay(100);
         for(int x = 0; x < 512; ++x) {
             led.set_color(x, x, x);
-            SDL_Delay(5);
+            SDL_Delay(10);
         }
         for(int x = 511; x >= 0; --x) {
             led.set_color(x, x, x);
-            SDL_Delay(5);
+            SDL_Delay(10);
         }
         return 0;
     }

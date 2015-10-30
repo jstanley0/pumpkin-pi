@@ -496,7 +496,47 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     return EXIT_SUCCESS;
 }
 
+int frd_init_pwm(int channel, int gpio_mask)
+{
+    int i;
+    uint32_t phys_gpclr0 = 0x7e200000 + 0x28;
+    uint32_t phys_gpset0 = 0x7e200000 + 0x1c;
+    dma_cb_t *cbp = (dma_cb_t *) get_cb(channel);
 
+    clear_channel(channel);
+
+    cbp[0].dst = phys_gpclr0;
+    for(i = 2; i < channels[channel].num_cbs; i += 2)
+        cbp[i].dst = phys_gpset0;
+
+    for(i = 0; i < 32; ++i)
+        if (gpio_mask & (1 << i))
+           init_gpio(i);
+}
+
+int frd_clear(int channel, int pos, int gpio_mask)
+{
+    uint32_t *dp = (uint32_t *) channels[channel].virtbase;
+
+    if (pos < 0 || pos > channels[channel].width_max)
+        return fatal("frd_clear: pos out of range\n");
+
+    dp[pos] &= ~gpio_mask;
+
+    return EXIT_SUCCESS;
+}
+
+int frd_set_high(int channel, int pos, int gpio_mask)
+{
+    uint32_t *dp = (uint32_t *) channels[channel].virtbase;
+
+    if (pos < 0 || pos > channels[channel].width_max)
+        return fatal("frd_set_high: pos out of range\n");
+
+    dp[pos] |= gpio_mask;
+
+    return EXIT_SUCCESS;
+}
 
 // Get a channel's pagemap
 static int
