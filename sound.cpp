@@ -8,7 +8,7 @@ Sound::Sound()
     if (0 != SDL_Init(SDL_INIT_AUDIO))
         throw SDLError();
 
-    if (0 != Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 256))
+    if (0 != Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024))
         throw MixError();
 }
 
@@ -18,7 +18,7 @@ Sound::~Sound()
         Mix_FreeMusic(m_sound_file);
     Mix_CloseAudio();
 }
-    
+
 void Sound::set_callback(callback cb, void *context)
 {
     Mix_UnregisterAllEffects(MIX_CHANNEL_POST);

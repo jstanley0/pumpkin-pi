@@ -10,7 +10,7 @@ pumpkin-pi: main.o led.o sound.o error.o pwm.o
 main.o: main.cpp sound.h led.h
 	g++ $(CFLAGS) $(SDL_CFLAGS) -c main.cpp
 
-led.o: pwm/pwm.h led.h
+led.o: led.cpp pwm/pwm.h led.h
 	g++ $(CFLAGS) -c led.cpp
 
 sound.o: sound.cpp sound.h error.h
