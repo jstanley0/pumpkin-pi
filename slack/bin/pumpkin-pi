@@ -10,6 +10,7 @@ require 'colorize'
 CONFIG_FILE = File.expand_path("~/.slack-auth")
 PUMPKIN_PI_PATH = File.expand_path("../../../pumpkin-pi", __FILE__)
 SOUND_PATH = File.expand_path("../../../sounds", __FILE__)
+VOICE_PATH = "/tmp/pumpkin-pi.wav"
 
 #PUMPKIN_PI_CHANNEL = 'C0DJ25DGF'
 PUMPKIN_PI_CHANNEL = 'G0DJ24D2A' # frd
@@ -30,12 +31,12 @@ class PiWrapper
     end
 
     def say(text, color = nil, voice = nil)
-        cmd = ["espeak", "-w", "/tmp/pumpkin-pi.wav"]
-        cmd += [" -v", voice] if voice
+        cmd = ["espeak", "-w", VOICE_PATH]
+        cmd += ["-v", voice] if voice
         puts cmd.join(' ').cyan
         IO.popen(cmd, 'w') { |io| io.puts(text) }
         send_pi "color loud #{translate_color(color)}" if color
-        send_pi "play #{SOUND_PATH}/#{file}"
+        send_pi "play #{VOICE_PATH}"
         text
     end
     

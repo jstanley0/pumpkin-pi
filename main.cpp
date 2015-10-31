@@ -132,12 +132,14 @@ void queue_command(const std::string &command)
 
 bool dequeue_command(std::string &command)
 {
-    // idle with candle
-    if (g_candle_on) {
-        candle();
-    } else {
-        while(!g_interrupted)
-            SDL_Delay(50);
+    if (!g_interrupted) {
+        // idle with candle
+        if (g_candle_on) {
+            candle();
+        } else {
+            while(!g_interrupted)
+                SDL_Delay(50);
+        }
     }
 
     {
@@ -146,8 +148,8 @@ bool dequeue_command(std::string &command)
             return false;
         command = command_queue.front();
         command_queue.pop();
+        g_interrupted = !command_queue.empty();
     }
-    g_interrupted = false;
 
     return true;
 }
@@ -193,9 +195,11 @@ static int interactive_thread(void *param)
             {
                 try
                 {
+                    std::string filename;
                     while(ss.peek() == ' ')
                         ss.get();
-                    sound.load_file(ss.str().c_str());
+                    getline(ss, filename);
+                    sound.load_file(filename.c_str());
                     sound.play();
                 }
                 catch(SDLError &error)
