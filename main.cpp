@@ -27,7 +27,15 @@ void mix_colors(int dest_colors[3], int sound_intensity)
 {
     for(int i = 0; i < 3; ++i)
     {
-        dest_colors[i] = dark_color[i] + (((bright_color[i] - dark_color[i]) * sound_intensity) / 16384);
+        int bright_color, dark_color;
+        if (bright_color[i] > dark_color[i]) {
+            bright_color = bright_color[i];
+            dark_color = dark_color[i];
+        } else {
+            bright_color = dark_color[i];
+            dark_color = bright_color[i];
+        }
+        dest_colors[i] = dark_color + (((bright_color - dark_color) * sound_intensity) / 16384);
     }
 }
 
@@ -40,7 +48,7 @@ void sound_callback(short sound_intensity, void *context)
 
 void parse_color(int *colors, const char *arg)
 {
-    unsigned long color;
+    int color;
     if (1 == sscanf(arg, "#%x", &color)) {
         colors[0] = color >> 16;
         colors[1] = (color >> 8) & 0xFF;
