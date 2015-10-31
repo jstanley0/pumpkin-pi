@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.bindir      = 'bin'
   s.executables << 'pumpkin-pi'
   s.required_ruby_version = '>= 1.9.3'
+  s.add_dependency 'highline'
   s.add_dependency 'httparty', '~> 0'
   s.add_dependency 'slack-rtmapi', '1.0.0.rc4'
   s.add_dependency 'colorize', '~> 0.7'

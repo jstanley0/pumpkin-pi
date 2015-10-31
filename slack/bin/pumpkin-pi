@@ -23,14 +23,14 @@ class PiWrapper
 
     def say(text, color = nil, voice = nil)
         interrupt
-        cmd ["espeak", "-w", "/tmp/pumpkin-pi.wav"]
+        cmd = ["espeak", "-w", "/tmp/pumpkin-pi.wav"]
         cmd += [" -v", voice] if voice
-        puts cmd.cyan.join ' '
+        puts cmd.join(' ').cyan
         IO.popen(cmd, 'w') { |io| io.puts(text) }
         cmd = [PUMPKIN_PI_PATH, "/tmp/pumpkin-pi.wav"]
         cmd << translate_color(color) if color
-        puts cmd.yellow.join ' '
-        @pid = spawn(cmd)
+        puts cmd.join(' ').yellow
+        @pid = spawn(*cmd)
         text
     end
     
@@ -42,8 +42,8 @@ class PiWrapper
         if file
             cmd = [PUMPKIN_PI_PATH, "#{SOUND_PATH}/#{file}"]
             cmd << translate_color(color) if color
-            puts cmd.red.join ' '
-            @pid = spawn(cmd)            
+            puts cmd.join(' ').magenta
+            @pid = spawn(*cmd)            
             "playing \"#{file}\""
         else
             "couldn't find that sound"
@@ -54,7 +54,7 @@ class PiWrapper
         interrupt
         cmd = [PUMPKIN_PI_PATH, '--candle']
         cmd << translate_color(color) if color
-        @pid = spawn(cmd)
+        @pid = spawn(*cmd)
         "candle started"
     end
 
