@@ -1,0 +1,201 @@
+#!/usr/bin/env ruby
+
+require 'highline/import'
+require 'httparty'
+require 'slack-rtmapi'
+require 'json'
+require 'date'
+require 'colorize'
+
+CONFIG_FILE = File.expand_path("~/.slack-auth")
+PUMPKIN_PI_PATH = File.expand_path("../../../pumpkin-pi", __FILE__)
+SOUND_PATH = File.expand_path("../../../sounds", __FILE__)
+
+#PUMPKIN_PI_CHANNEL = 'C0DJ25DGF'
+PUMPKIN_PI_CHANNEL = 'G0DJ24D2A' # frd
+
+$slack_login_time = nil
+
+class PiWrapper
+    def initialize
+        candle
+    end
+
+    def say(text, color = nil, voice = nil)
+        interrupt
+        cmd ["espeak", "-w", "/tmp/pumpkin-pi.wav"]
+        cmd += [" -v", voice] if voice
+        puts cmd.cyan.join ' '
+        IO.popen(cmd, 'w') { |io| io.puts(text) }
+        cmd = [PUMPKIN_PI_PATH, "/tmp/pumpkin-pi.wav"]
+        cmd << translate_color(color) if color
+        puts cmd.yellow.join ' '
+        @pid = spawn(cmd)
+        text
+    end
+    
+    def play(file, color = nil)
+        interrupt
+        file = Dir.entries(SOUND_PATH).detect do |sound_file|
+            sound_file.downcase.include? file.downcase
+        end
+        if file
+            cmd = [PUMPKIN_PI_PATH, "#{SOUND_PATH}/#{file}"]
+            cmd << translate_color(color) if color
+            puts cmd.red.join ' '
+            @pid = spawn(cmd)            
+            "playing \"#{file}\""
+        else
+            "couldn't find that sound"
+        end
+    end
+    
+    def candle(color = nil)
+        interrupt
+        cmd = [PUMPKIN_PI_PATH, '--candle']
+        cmd << translate_color(color) if color
+        @pid = spawn(cmd)
+        "candle started"
+    end
+
+private
+    def interrupt
+        return unless @pid
+        begin
+            # see if it's exited already
+            return if Process.wait(@pid, Process::WNOHANG)
+            
+            # send SIGINT
+            Process.kill :INT, @pid
+            
+            # wait FRD
+            Process.wait @pid
+        rescue Errno::ESRCH
+            # process doesn't exist? 
+        ensure
+            @pid = nil
+        end
+    end
+
+    COLORS = {
+        "red" => "#ff0000",
+        "orange" => "#ff6000",
+        "yellow" => "#ffc000",
+        "green" => "#00ff00",
+        "cyan" => "#00ffff",
+        "blue" => "#0000ff",
+        "purple" => "#c000ff",
+        "white" => "#ffffff"
+    }
+
+    def translate_color(color)
+        COLORS[color] || color
+    end
+end
+
+class SlackAPI
+  class Error < RuntimeError; end
+
+  class Http
+    include HTTParty
+    base_uri 'https://slack.com'
+    debug_output $stderr if ENV['SLACK_DEBUG'].to_i == 1
+  end
+
+  def self.get(path, url_params = {})
+    response = Http.get(path, query: url_params.merge(token: $config[:slack_token]))
+    $slack_login_time ||= DateTime.httpdate(response.headers['Date']).to_time.to_i
+    raise Error.new("#{response.code} #{response.message}") unless response.code == 200
+    json = JSON.parse(response.body)
+    raise Error.new(response["error"]) unless response["ok"]
+    json
+  end
+end
+
+
+def check_config
+  $config = {}
+  config_changed = false
+  config_file = File.new(CONFIG_FILE, File::CREAT|File::RDWR, 0600)
+  raise "Permissions for #{CONFIG_FILE} are too liberal" if config_file.stat.world_readable?
+  data = config_file.read
+  unless data.empty?
+    $config = JSON.parse(data).tap do |h|
+      h.keys.each { |k| h[k.to_sym] = h.delete(k) }
+    end
+  end
+
+  # log in to slack
+  loop do
+    if $config[:slack_token]
+      begin
+        result = SlackAPI.get("/api/auth.test")
+        $slack_user_id = result["user_id"]
+        puts "Logged into Slack"
+        break
+      rescue SlackAPI::Error => e
+        puts "Slack login failed: #{e.message}"
+        $config.delete(:slack_token)
+      end
+    end
+    if !$config[:slack_token]
+      config_changed = true
+      $config[:slack_token] = ask("Paste your Slack token: ")
+    end
+  end
+
+  # save config
+  if config_changed
+    config_file.rewind
+    config_file.truncate(0)
+    config_file.write $config.to_json
+  end
+end
+
+def open_im_channel(user_id)
+  json = SlackAPI.get "/api/im.open", user: user_id
+  json["channel"]["id"]
+end
+
+def send_in_channel(channel, text)
+  SlackAPI.get "/api/chat.postMessage", channel: channel, username: 'Pumpkin Pi', as_user: false, text: text,
+               unfurl_links: false, unfurl_media: false, icon_emoji: ":pumpkin:"
+end
+
+# send a direct message to the caller
+def pm(message, text)
+  send_in_channel(open_im_channel($slack_user_id), text)
+end
+
+# reply to the message in channel
+def reply(message, text)
+  send_in_channel(message["channel"], text)
+end
+
+
+# ...
+
+$slack_user_id = nil
+$pi = PiWrapper.new
+
+check_config
+
+$slack_client = SlackRTM::Client.new(websocket_url: SlackRTM.get_url(token: $config[:slack_token]))
+$slack_client.on(:message) do |data|
+  if data["type"] == "message" && data["channel"] == PUMPKIN_PI_CHANNEL
+    next if data['ts'].to_f < $slack_login_time
+    text = data["text"]
+    if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))? (.+)\z/
+      reply data, $pi.say($3, $1, $2)
+    elsif text =~ /\Aplay(?::([^: ]+))? (.+)\z/
+      reply data, $pi.play($2, $1)
+    elsif text =~ /\Acandle(?::([^: ]+))?\z/
+      reply data, $pi.candle($1)
+    end
+  end
+end
+
+puts "Connected to Slack Real Time Messaging API"
+
+$slack_client.main_loop
+
