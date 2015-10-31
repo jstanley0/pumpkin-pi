@@ -12,7 +12,7 @@
 LED led;
 
 int dark_color[3] = { 0, 0, 0 };
-int bright_color[3] = { 255, 192, 0 };
+int bright_color[3] = { 255, 96, 0 };
 
 volatile bool g_interrupted = false;
 void sig_handler(int signo)
@@ -28,7 +28,7 @@ void mix_colors(int dest_colors[3], int sound_intensity)
     for(int i = 0; i < 3; ++i)
     {
         int bright, dark;
-        if (bright_color[i] > dark_color[i]) {
+        if (bright_color[i] >= dark_color[i]) {
             bright = bright_color[i];
             dark = dark_color[i];
         } else {
