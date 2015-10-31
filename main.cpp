@@ -27,15 +27,16 @@ void mix_colors(int dest_colors[3], int sound_intensity)
 {
     for(int i = 0; i < 3; ++i)
     {
-        int bright_color, dark_color;
+        int bright, dark;
         if (bright_color[i] > dark_color[i]) {
-            bright_color = bright_color[i];
-            dark_color = dark_color[i];
+            bright = bright_color[i];
+            dark = dark_color[i];
         } else {
-            bright_color = dark_color[i];
-            dark_color = bright_color[i];
+            bright = dark_color[i];
+            dark = bright_color[i];
+            sound_intensity = 32767 - sound_intensity;
         }
-        dest_colors[i] = dark_color + (((bright_color - dark_color) * sound_intensity) / 16384);
+        dest_colors[i] = dark + (((bright - dark) * sound_intensity) / 16384);
     }
 }
 
