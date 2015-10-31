@@ -3,6 +3,8 @@
 #include "SDL.h"
 #include "SDL_mixer.h"
 
+extern volatile bool g_interrupted;
+
 Sound::Sound()
 {
     if (0 != SDL_Init(SDL_INIT_AUDIO))
@@ -57,6 +59,6 @@ void Sound::play()
     if (0 != Mix_PlayMusic(m_sound_file, 0))
         throw MixError();
 
-    while(Mix_PlayingMusic())
+    while(Mix_PlayingMusic() && !g_interrupted)
         SDL_Delay(20);
 }

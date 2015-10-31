@@ -11,8 +11,14 @@
 
 LED led;
 
-int dark_color[] = { 0, 0, 0 };
-int bright_color[] = { 255, 192, 0 };
+int dark_color[3] = { 0, 0, 0 };
+int bright_color[3] = { 255, 192, 0 };
+
+volatile bool g_interrupted = false;
+void sig_handler(int signo)
+{
+    g_interrupted = true;
+}
 
 // max intensity is 32767 (16-bit signed audio)
 // the source colors (above) have an 8-bit range
@@ -32,15 +38,15 @@ void sound_callback(short sound_intensity, void *context)
     led.set_color(colors[0], colors[1], colors[2]);
 }
 
-void parse_color(int colors[3], const char *arg)
+void parse_color(int *colors, const char *arg)
 {
-    int color;
-    if (1 != sscanf(arg, "#%x", &color)) {
-        fprintf(stderr, "warning: failed to parse color %s\n", arg);
-    } else {
+    unsigned long color;
+    if (1 == sscanf(arg, "#%x", &color)) {
         colors[0] = color >> 16;
         colors[1] = (color >> 8) & 0xFF;
-        colors[1] = color & 0xFF;
+        colors[2] = color & 0xFF;
+    } else {
+        fprintf(stderr, "warning: failed to parse color %s\n", arg);
     }
 }
 
@@ -65,50 +71,31 @@ int led_test()
     return 0;
 }
 
-volatile bool interrupted = false;
-void sig_handler(int signo)
-{
-    interrupted = true;
-}
-
 int candle()
 {
-    // use SIGHUP to tell us when it's time to fade out and exit
-    signal(SIGHUP, sig_handler);
-
     int colors[3], intensity;
     srand((unsigned)time(NULL));
 
-    // fade in
-    for(intensity = 0; intensity < 16384; intensity += 128)
+    int delta = 0;
+
+    while(!g_interrupted)
     {
+        delta += (rand() % 2048) - 1024;
+        if (delta < -8192 || delta > 8192)
+            delta = 0;
+        intensity = 16384 + delta;
         mix_colors(colors, intensity);
         led.set_color(colors[0], colors[1], colors[2]);
-        SDL_Delay(10);
+        SDL_Delay(5);
     }
 
-    // flicker madly
-    while(!interrupted)
-    {
-        intensity = 16384 + (rand() % 8192) - 4096;
-        mix_colors(colors, intensity);
-        led.set_color(colors[0], colors[1], colors[2]);
-        SDL_Delay(10);
-    }
-
-    // fade out
-    for(intensity = 16384; intensity >= 0; intensity -= 128)
-    {
-        mix_colors(colors, intensity);
-        led.set_color(colors[0], colors[1], colors[2]);
-        SDL_Delay(10);
-    }
-    
     return 0;
 }
 
 int main(int argc, char **argv)
 {
+    signal(SIGINT, sig_handler);
+
     if (argc < 2) {
         std::cerr <<
             "Usage:\n"
