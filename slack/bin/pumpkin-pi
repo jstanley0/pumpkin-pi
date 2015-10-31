@@ -18,66 +18,49 @@ $slack_login_time = nil
 
 class PiWrapper
     def initialize
-        candle
+        @pi = IO.popen([PUMPKIN_PI_PATH, '--interactive'], 'w')
+        Signal.trap('INT') do
+            if @pi
+                puts 'Shutting down pumpkin-pi...'
+                send_pi 'exit'
+                Process.wait @pi.pid
+            end
+            exit
+        end
     end
 
     def say(text, color = nil, voice = nil)
-        interrupt
         cmd = ["espeak", "-w", "/tmp/pumpkin-pi.wav"]
         cmd += [" -v", voice] if voice
         puts cmd.join(' ').cyan
         IO.popen(cmd, 'w') { |io| io.puts(text) }
-        cmd = [PUMPKIN_PI_PATH, "/tmp/pumpkin-pi.wav"]
-        cmd << translate_color(color) if color
-        puts cmd.join(' ').yellow
-        @pid = spawn(*cmd)
+        send_pi "color loud #{translate_color(color)}" if color
+        send_pi "play #{SOUND_PATH}/#{file}"
         text
     end
     
     def play(file, color = nil)
-        interrupt
         file = Dir.entries(SOUND_PATH).detect do |sound_file|
             sound_file.downcase.include? file.downcase
         end
         if file
-            cmd = [PUMPKIN_PI_PATH, "#{SOUND_PATH}/#{file}"]
-            cmd << translate_color(color) if color
-            puts cmd.join(' ').magenta
-            @pid = spawn(*cmd)            
+            send_pi "color loud #{translate_color(color)}" if color
+            send_pi "play #{SOUND_PATH}/#{file}"
             "playing \"#{file}\""
         else
             "couldn't find that sound"
         end
     end
     
-    def candle(color = nil)
-        interrupt
-        cmd = [PUMPKIN_PI_PATH, '--candle']
-        cmd << translate_color(color) if color
-        @pid = spawn(*cmd)
-        "candle started"
+    def candle(color)
+        send_pi "color bright #{translate_color(color)}"
+        "candle #{color}"
     end
 
-private
-    def interrupt
-        return unless @pid
-        begin
-            # see if it's exited already
-            return if Process.wait(@pid, Process::WNOHANG)
-            
-            # send SIGINT
-            Process.kill :INT, @pid
-            
-            # wait FRD
-            Process.wait @pid
-        rescue Errno::ESRCH
-            # process doesn't exist? 
-        ensure
-            @pid = nil
-        end
-    end
-
+    private
+    
     COLORS = {
+        "off" => "#000000",
         "red" => "#ff0000",
         "orange" => "#ff6000",
         "yellow" => "#ffc000",
@@ -91,6 +74,12 @@ private
     def translate_color(color)
         COLORS[color] || color
     end
+
+    def send_pi(command)
+        @pi.puts command
+        @pi.flush
+    end
+
 end
 
 class SlackAPI
@@ -189,7 +178,7 @@ $slack_client.on(:message) do |data|
       reply data, $pi.say($3, $1, $2)
     elsif text =~ /\Aplay(?::([^: ]+))? (.+)\z/
       reply data, $pi.play($2, $1)
-    elsif text =~ /\Acandle(?::([^: ]+))?\z/
+    elsif text =~ /\Acandle(?::([^: ]+))\z/
       reply data, $pi.candle($1)
     end
   end

@@ -193,8 +193,9 @@ static int interactive_thread(void *param)
             {
                 try
                 {
-                    ss >> arg;
-                    sound.load_file(arg.c_str());
+                    while(ss.peek() == ' ')
+                        ss.get();
+                    sound.load_file(ss.str().c_str());
                     sound.play();
                 }
                 catch(SDLError &error)
