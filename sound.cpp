@@ -61,4 +61,7 @@ void Sound::play()
 
     while(Mix_PlayingMusic() && !g_interrupted)
         SDL_Delay(20);
+
+    if (g_interrupted)
+        Mix_HaltMusic();
 }
