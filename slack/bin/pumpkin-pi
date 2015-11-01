@@ -40,10 +40,9 @@ class PiWrapper
         text
     end
     
-    def play(file, color = nil)
-        file = Dir.entries(SOUND_PATH).detect do |sound_file|
-            sound_file.downcase.include? file.downcase
-        end
+    def play(file = nil, color = nil)
+        file ||= ''
+        file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
         if file
             send_pi "color loud #{translate_color(color)}" if color
             send_pi "play #{SOUND_PATH}/#{file}"
@@ -175,12 +174,20 @@ $slack_client.on(:message) do |data|
   if data["type"] == "message" && data["channel"] == PUMPKIN_PI_CHANNEL
     next if data['ts'].to_f < $slack_login_time
     text = data["text"]
-    if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))? (.+)\z/
+    if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
       reply data, $pi.say($3, $1, $2)
-    elsif text =~ /\Aplay(?::([^: ]+))? (.+)\z/
+    elsif text =~ /\Aplay(?::([^: ]+))? (.+)\z/i
       reply data, $pi.play($2, $1)
-    elsif text =~ /\Acandle(?::([^: ]+))\z/
+    elsif text =~ /\Acandle(?::([^: ]+))\z/i
       reply data, $pi.candle($1)
+    elsif text =~ /\Arandom\z/i
+      reply data, $pi.play
+    elsif text =~ /\Ahh\z/i
+      reply data, $pi.say('Happy Halloween!')
+    elsif text =~ /\Ayw\z/i
+      reply data, $pi.say("You're welcome! Don't eat it all tonight!")
+    elsif text =~ /\Ahello\z/i
+      reply data, $pi.say("Hello! I'm the pumpkin down here.")
     end
   end
 end
