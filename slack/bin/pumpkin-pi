@@ -12,8 +12,7 @@ PUMPKIN_PI_PATH = File.expand_path("../../../pumpkin-pi", __FILE__)
 SOUND_PATH = File.expand_path("../../../sounds", __FILE__)
 VOICE_PATH = "/tmp/pumpkin-pi.wav"
 
-#PUMPKIN_PI_CHANNEL = 'C0DJ25DGF'
-PUMPKIN_PI_CHANNEL = 'G0DJ24D2A' # frd
+PUMPKIN_PI_CHANNEL = 'C0DJ25DGF'
 
 $slack_login_time = nil
 

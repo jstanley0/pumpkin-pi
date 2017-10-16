@@ -87,13 +87,13 @@ int led_test()
     return 0;
 }
 
-int candle()
+int candle(int duration = 0)
 {
     int colors[3], intensity;
     srand((unsigned)time(NULL));
 
     int delta = 0;
-
+    int cycles = 0;
     while(!g_interrupted)
     {
         delta += (rand() % 2048) - 1024;
@@ -103,6 +103,7 @@ int candle()
         mix_colors(colors, dark_color, bright_color, intensity);
         led.set_color(colors[0], colors[1], colors[2]);
         SDL_Delay(5);
+        if (duration != 0 && ++cycles >= duration) break;
     }
 
     return 0;
@@ -254,7 +255,7 @@ int main(int argc, char **argv)
         std::cerr <<
             "Usage:\n"
             "  --interactive\n"
-            "  --led_test\n"
+            "  --led-test\n"
             "  --candle [bright_color [dark_color]]\n"
             "  sound_file.mp3 [loud_color [silent_color]]\n"
             "    (where colors are given in #rrggbb format)";
@@ -270,7 +271,11 @@ int main(int argc, char **argv)
             parse_color(bright_color, argv[2]);
         if (argc >= 4)
             parse_color(dark_color, argv[3]);
-        return candle();
+        int duration = 0;
+        if (argc >= 5)
+            duration = atoi(argv[4]);
+        std::cout << "candle duration is " << duration << '/' << argv[4] << std::endl;
+        return candle(duration);
     }
 
     const char *sound_file = argv[1];
