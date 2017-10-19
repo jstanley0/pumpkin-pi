@@ -17,7 +17,7 @@
 LED led;
 
 int dark_color[3] = { 0, 0, 0 };
-int bright_color[3] = { 255, 128, 0 };
+int bright_color[3] = { 255, 63, 0 };
 int silent_color[3] = { 0, 0, 0 };
 int loud_color[3] = { 128, 224, 255 };
 
@@ -68,11 +68,15 @@ void parse_color(int *colors, const char *arg)
 
 int led_test()
 {
-    led.set_color(63, 63, 63);
+    led.set_color(511, 0, 0);
     SDL_Delay(1000);
     led.set_color(0, 0, 0);
     SDL_Delay(100);
-    led.set_color(511, 511, 511);
+    led.set_color(0, 511, 0);
+    SDL_Delay(1000);
+    led.set_color(0, 0, 0);
+    SDL_Delay(100);
+    led.set_color(0, 0, 511);
     SDL_Delay(1000);
     led.set_color(0, 0, 0);
     SDL_Delay(100);
@@ -274,7 +278,7 @@ int main(int argc, char **argv)
         int duration = 0;
         if (argc >= 5)
             duration = atoi(argv[4]);
-        std::cout << "candle duration is " << duration << '/' << argv[4] << std::endl;
+        std::cout << "candle duration is " << duration << std::endl;
         return candle(duration);
     }
 

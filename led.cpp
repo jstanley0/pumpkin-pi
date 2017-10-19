@@ -58,7 +58,7 @@ void LED::allocate_dma_channels()
 
 void LED::set_color(int r, int g, int b)
 {
-    add_channel_pulse(m_dma_channels[0],  9, 0, r);
-    add_channel_pulse(m_dma_channels[1], 10, 0, g);
-    add_channel_pulse(m_dma_channels[2], 11, 0, b);
+    add_channel_pulse(m_dma_channels[0],  8, 0, r);
+    add_channel_pulse(m_dma_channels[1],  7, 0, g);
+    add_channel_pulse(m_dma_channels[2], 25, 0, b);
 }
