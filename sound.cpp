@@ -10,7 +10,7 @@ Sound::Sound()
     if (0 != SDL_Init(SDL_INIT_AUDIO))
         throw SDLError();
 
-    if (0 != Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024))
+    if (0 != Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024))
         throw MixError();
 }
 
@@ -34,17 +34,18 @@ void Sound::set_callback(callback cb, void *context)
 {
     short *samples = (short *)stream;
     int count = len / 2;
-    short max = 0;
+    short maxL = 0, maxR = 0;
     for(int i = 0; i < count; ++i) {
         short sample = samples[i];
         if (sample < 0)
             sample = -sample;
-        if (samples[i] > max)
-            max = samples[i];
+        short *max = ((i & 1) ? &maxL : &maxR);
+        if (samples[i] > *max)
+            *max = samples[i];
     }
 
     Sound *self = (Sound *)udata;
-    self->m_callback(max, self->m_context);
+    self->m_callback(maxL, maxR, self->m_context);
 }
 
 void Sound::load_file(const char *filename)

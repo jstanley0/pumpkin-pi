@@ -47,11 +47,12 @@ void mix_colors(int dest_colors[3], int low_color[3], int high_color[3], int sou
     }
 }
 
-void sound_callback(short sound_intensity, void *context)
+void sound_callback(short soundL, short soundR, void *context)
 {
-    int colors[3];
-    mix_colors(colors, silent_color, loud_color, sound_intensity);
-    led.set_color(colors[0], colors[1], colors[2]);
+    int colorsL[3], colorsR[3];
+    mix_colors(colorsL, silent_color, loud_color, soundL);
+    mix_colors(colorsR, silent_color, loud_color, soundR);
+    led.set_color(colorsL[0], colorsL[1], colorsL[2], colorsR[0], colorsR[1], colorsR[2]);
 }
 
 void parse_color(int *colors, const char *arg)

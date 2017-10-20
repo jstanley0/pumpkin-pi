@@ -8,7 +8,7 @@ public:
     Sound();
     ~Sound();
     
-    typedef void (*callback)(short max_intensity, void *context);
+    typedef void (*callback)(short max_left, short max_right, void *context);
     
     void set_callback(callback cb, void *context);
     void load_file(const char *filename);

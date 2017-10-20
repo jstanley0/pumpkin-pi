@@ -41,12 +41,20 @@ void LED::init_pin(int gpio)
 
 void LED::set_color(int r, int g, int b)
 {
-    // for now just control both LEDs the same
-    // soon we will use the L/R audio channels to control them independently!
     set_PWM_dutycycle(m_pi, RL, r);
     set_PWM_dutycycle(m_pi, RR, r);
     set_PWM_dutycycle(m_pi, GL, g);
     set_PWM_dutycycle(m_pi, GR, g);
     set_PWM_dutycycle(m_pi, BL, b);
     set_PWM_dutycycle(m_pi, BR, b);
+}
+
+void LED::set_color(int rL, int gL, int bL, int rR, int gR, int bR)
+{
+    set_PWM_dutycycle(m_pi, RL, rL);
+    set_PWM_dutycycle(m_pi, RR, rR);
+    set_PWM_dutycycle(m_pi, GL, gL);
+    set_PWM_dutycycle(m_pi, GR, gR);
+    set_PWM_dutycycle(m_pi, BL, bL);
+    set_PWM_dutycycle(m_pi, BR, bR);
 }
