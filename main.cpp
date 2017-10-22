@@ -52,7 +52,7 @@ void sound_callback(short soundL, short soundR, void *context)
     int colorsL[3], colorsR[3];
     mix_colors(colorsL, silent_color, loud_color, soundL);
     mix_colors(colorsR, silent_color, loud_color, soundR);
-    led.set_color(colorsL[0], colorsL[1], colorsL[2], colorsR[0], colorsR[1], colorsR[2]);
+    led.set_color(colorsL, colorsR);
 }
 
 void parse_color(int *colors, const char *arg)
@@ -92,21 +92,27 @@ int led_test()
     return 0;
 }
 
+void modulate_candle(int &delta, int colors[3])
+{
+    delta += (rand() % 2048) - 1024;
+    if (delta < -8192 || delta > 8192)
+        delta = 0;
+    int intensity = 16384 + delta;
+    mix_colors(colors, dark_color, bright_color, intensity);
+}
+
 int candle(int duration = 0)
 {
-    int colors[3], intensity;
+    int colorsL[3], colorsR[3];
     srand((unsigned)time(NULL));
 
-    int delta = 0;
+    int deltaL = 0, deltaR = 0;
     int cycles = 0;
     while(!g_interrupted)
     {
-        delta += (rand() % 2048) - 1024;
-        if (delta < -8192 || delta > 8192)
-            delta = 0;
-        intensity = 16384 + delta;
-        mix_colors(colors, dark_color, bright_color, intensity);
-        led.set_color(colors[0], colors[1], colors[2]);
+        modulate_candle(deltaL, colorsL);
+        modulate_candle(deltaR, colorsR);
+        led.set_color(colorsL, colorsR);
         SDL_Delay(5);
         if (duration != 0 && ++cycles >= duration) break;
     }

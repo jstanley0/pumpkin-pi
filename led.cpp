@@ -49,12 +49,12 @@ void LED::set_color(int r, int g, int b)
     set_PWM_dutycycle(m_pi, BR, b);
 }
 
-void LED::set_color(int rL, int gL, int bL, int rR, int gR, int bR)
+void LED::set_color(int l[3], int r[3])
 {
-    set_PWM_dutycycle(m_pi, RL, rL);
-    set_PWM_dutycycle(m_pi, RR, rR);
-    set_PWM_dutycycle(m_pi, GL, gL);
-    set_PWM_dutycycle(m_pi, GR, gR);
-    set_PWM_dutycycle(m_pi, BL, bL);
-    set_PWM_dutycycle(m_pi, BR, bR);
+    set_PWM_dutycycle(m_pi, RL, l[0]);
+    set_PWM_dutycycle(m_pi, RR, r[0]);
+    set_PWM_dutycycle(m_pi, GL, l[1]);
+    set_PWM_dutycycle(m_pi, GR, r[1]);
+    set_PWM_dutycycle(m_pi, BL, l[2]);
+    set_PWM_dutycycle(m_pi, BR, r[2]);
 }
