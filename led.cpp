@@ -8,9 +8,9 @@
 #define RL  8
 #define GL  7
 #define BL 25
-#define RR  9
-#define GR 10
-#define BR 11
+#define RR 10
+#define GR 11
+#define BR  9
 
 LED::LED()
 {
