@@ -18,8 +18,8 @@ LED led;
 
 int dark_color[3] = { 0, 0, 0 };
 int bright_color[3] = { 255, 63, 0 };
-int silent_color[3] = { 0, 0, 0 };
-int loud_color[3] = { 128, 224, 255 };
+int silent_color[3] = { 127, 31, 0 };
+int loud_colorL[3] = { 128, 224, 255 }, loud_colorR[3] = { 255, 96, 255 };
 
 volatile bool g_interrupted = false;
 void sig_handler(int signo)
@@ -50,8 +50,8 @@ void mix_colors(int dest_colors[3], int low_color[3], int high_color[3], int sou
 void sound_callback(short soundL, short soundR, void *context)
 {
     int colorsL[3], colorsR[3];
-    mix_colors(colorsL, silent_color, loud_color, soundL);
-    mix_colors(colorsR, silent_color, loud_color, soundR);
+    mix_colors(colorsL, silent_color, loud_colorL, soundL);
+    mix_colors(colorsR, silent_color, loud_colorR, soundR);
     led.set_color(colorsL, colorsR);
 }
 
@@ -198,21 +198,26 @@ static int interactive_thread(void *param)
                 else if (arg == "silent")
                     target = silent_color;
                 else if (arg == "loud")
-                    target = loud_color;
-
-                ss >> arg;
-                parse_color(target, arg.c_str());
+                    target = loud_colorL;
+                else if (arg == "rloud")
+                    target = loud_colorR;
+                
+                if (target) {
+                    ss >> arg;
+                    parse_color(target, arg.c_str());
+                }
             }
             else if (command == "play")
             {
                 try
                 {
+                    ss >> arg;                    
                     std::string filename;
                     while(ss.peek() == ' ')
                         ss.get();
                     getline(ss, filename);
                     sound.load_file(filename.c_str());
-                    sound.play();
+                    sound.play(arg[0]);
                 }
                 catch(SDLError &error)
                 {
@@ -233,7 +238,7 @@ static int interactive_thread(void *param)
 }
 
 // candle {on|off}
-// color {dark|bright|silent|loud} #rrggbb
+// color {dark|bright|silent|loud|rloud} #rrggbb
 // play filename
 // exit
 int interactive()
@@ -268,7 +273,7 @@ int main(int argc, char **argv)
             "  --interactive\n"
             "  --led-test\n"
             "  --candle [bright_color [dark_color]]\n"
-            "  sound_file.mp3 [loud_color [silent_color]]\n"
+            "  sound_file.mp3 [loud_color [silent_color [right_color]]]\n"
             "    (where colors are given in #rrggbb format)";
         return 1;
     }
@@ -290,10 +295,14 @@ int main(int argc, char **argv)
     }
 
     const char *sound_file = argv[1];
-    if (argc >= 3)
-        parse_color(loud_color, argv[2]);
+    if (argc >= 3) {
+        parse_color(loud_colorL, argv[2]);
+        parse_color(loud_colorR, argv[2]);        
+    }
     if (argc >= 4)
         parse_color(silent_color, argv[3]);
+    if (argc >= 5)
+        parse_color(loud_colorR, argv[4]);
 
     try
     {

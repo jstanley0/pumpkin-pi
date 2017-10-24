@@ -12,7 +12,7 @@ public:
     
     void set_callback(callback cb, void *context);
     void load_file(const char *filename);
-    void play();
+    void play(char channel = 's');   // "l", "r", or "s"
     
 private:
     _Mix_Music *m_sound_file;
@@ -20,5 +20,5 @@ private:
     callback m_callback;
     void *m_context;
     
-    static void effect_proc(int chan, void *stream, int len, void *udata);
+    static void postmix_proc(void *udata, unsigned char *stream, int len);
 };

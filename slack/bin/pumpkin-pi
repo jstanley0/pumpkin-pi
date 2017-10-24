@@ -29,22 +29,22 @@ class PiWrapper
         end
     end
 
-    def say(text, color = nil, voice = nil)
+    def say(text, channel = 's', voice = nil, color = nil, color2 = nil)
         cmd = ["espeak", "-w", VOICE_PATH]
         cmd += ["-v", voice] if voice
         puts cmd.join(' ').cyan
         IO.popen(cmd, 'w') { |io| io.puts(text) }
-        send_pi "color loud #{translate_color(color)}" if color
-        send_pi "play #{VOICE_PATH}"
+        send_colors(channel, color, color2)
+        send_pi "play #{channel} #{VOICE_PATH}"
         text
     end
     
-    def play(file = nil, color = nil)
+    def play(file = nil, channel = 's', color = nil, color2 = nil)
         file ||= ''
         file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
         if file
-            send_pi "color loud #{translate_color(color)}" if color
-            send_pi "play #{SOUND_PATH}/#{file}"
+            send_colors(channel, color, color2)
+            send_pi "play #{SOUND_PATH}/#{file} #{channel}"
             "playing \"#{file}\""
         else
             "couldn't find that sound"
@@ -79,6 +79,18 @@ class PiWrapper
         @pi.flush
     end
 
+    def send_colors(channel, color, color2)
+        return unless color
+        case channel
+        when 'l'
+            send_pi "color loud #{translate_color(color)}"
+        when 'r'
+            send_pi "color rloud #{translate_color(color)}"
+        when 's'
+            send_pi "color loud #{translate_color(color)}"
+            send_pi "color rloud #{translate_color(color2 || color)}"
+        end
+    end
 end
 
 class SlackAPI
@@ -173,10 +185,10 @@ $slack_client.on(:message) do |data|
   if data["type"] == "message" && data["channel"] == PUMPKIN_PI_CHANNEL
     next if data['ts'].to_f < $slack_login_time
     text = data["text"]
-    if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
-      reply data, $pi.say($3, $1, $2)
-    elsif text =~ /\Aplay(?::([^: ]+))? (.+)\z/i
-      reply data, $pi.play($2, $1)
+    if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
+      reply data, $pi.say($5, $1, $2, $3, $4)
+    elsif text =~ /\Aplay(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
+      reply data, $pi.play($4, $1, $2, $3)
     elsif text =~ /\Acandle(?::([^: ]+))\z/i
       reply data, $pi.candle($1)
     elsif text =~ /\Arandom\z/i

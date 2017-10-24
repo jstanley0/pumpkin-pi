@@ -23,14 +23,11 @@ Sound::~Sound()
 
 void Sound::set_callback(callback cb, void *context)
 {
-    Mix_UnregisterAllEffects(MIX_CHANNEL_POST);
     m_callback = cb;
     m_context = context;
-    if (!Mix_RegisterEffect(MIX_CHANNEL_POST, &Sound::effect_proc, NULL, this))
-        throw MixError();
 }
 
-/* static */ void Sound::effect_proc(int chan, void *stream, int len, void *udata)
+/* static */ void Sound::postmix_proc(void *udata, Uint8 *stream, int len)
 {
     short *samples = (short *)stream;
     int count = len / 2;
@@ -55,8 +52,11 @@ void Sound::load_file(const char *filename)
         throw MixError();
 }
 
-void Sound::play()
+void Sound::play(char channel)
 {
+    Mix_SetPanning(MIX_CHANNEL_POST, channel == 'r' ? 0 : 255, channel == 'l' ? 0 : 255);
+    Mix_SetPostMix(&Sound::postmix_proc, this);
+
     if (0 != Mix_PlayMusic(m_sound_file, 0))
         throw MixError();
 
@@ -65,4 +65,6 @@ void Sound::play()
 
     if (g_interrupted)
         Mix_HaltMusic();
+
+    Mix_SetPostMix(NULL, NULL);
 }
