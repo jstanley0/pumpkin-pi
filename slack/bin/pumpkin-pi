@@ -30,6 +30,7 @@ class PiWrapper
     end
 
     def say(text, channel = 's', voice = nil, color = nil, color2 = nil)
+        channel = random_channel if channel.nil? || channel.empty?
         cmd = ["espeak", "-w", VOICE_PATH]
         cmd += ["-v", voice] if voice
         puts cmd.join(' ').cyan
@@ -40,11 +41,12 @@ class PiWrapper
     end
     
     def play(file = nil, channel = 's', color = nil, color2 = nil)
+        channel = random_channel if channel.nil? || channel.empty?
         file ||= ''
         file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
         if file
             send_colors(channel, color, color2)
-            send_pi "play #{SOUND_PATH}/#{file} #{channel}"
+            send_pi "play #{channel} #{SOUND_PATH}/#{file}"
             "playing \"#{file}\""
         else
             "couldn't find that sound"
@@ -75,6 +77,7 @@ class PiWrapper
     end
 
     def send_pi(command)
+        STDERR.puts command
         @pi.puts command
         @pi.flush
     end
@@ -90,6 +93,10 @@ class PiWrapper
             send_pi "color loud #{translate_color(color)}"
             send_pi "color rloud #{translate_color(color2 || color)}"
         end
+    end
+
+    def random_channel
+      ['l', 'r', 's'].sample
     end
 end
 
