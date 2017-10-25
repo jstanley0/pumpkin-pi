@@ -18,7 +18,7 @@ LED led;
 
 int dark_color[3] = { 0, 0, 0 };
 int bright_color[3] = { 255, 63, 0 };
-int silent_color[3] = { 127, 31, 0 };
+int silent_color[3] = { 0, 0, 0 };
 int loud_colorL[3] = { 128, 224, 255 }, loud_colorR[3] = { 255, 96, 255 };
 
 volatile bool g_interrupted = false;
