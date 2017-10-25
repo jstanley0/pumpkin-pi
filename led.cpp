@@ -36,7 +36,6 @@ LED::~LED()
 void LED::init_pin(int gpio)
 {
     set_mode(m_pi, gpio, PI_OUTPUT);
-    set_PWM_range(m_pi, gpio, 511);
 }
 
 void LED::set_color(int r, int g, int b)

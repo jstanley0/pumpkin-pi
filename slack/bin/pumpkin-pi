@@ -30,7 +30,7 @@ class PiWrapper
     end
 
     def say(text, channel = 's', voice = nil, color = nil, color2 = nil)
-        channel = random_channel if channel.nil? || channel.empty?
+        channel = 's' if channel.nil? || channel.empty?
         cmd = ["espeak", "-w", VOICE_PATH]
         cmd += ["-v", voice] if voice
         puts cmd.join(' ').cyan
@@ -41,7 +41,7 @@ class PiWrapper
     end
     
     def play(file = nil, channel = 's', color = nil, color2 = nil)
-        channel = random_channel if channel.nil? || channel.empty?
+        channel = 's' if channel.nil? || channel.empty?
         file ||= ''
         file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
         if file
@@ -83,20 +83,18 @@ class PiWrapper
     end
 
     def send_colors(channel, color, color2)
-        return unless color
+        return if color.nil? || color.empty?
         case channel
-        when 'l'
-            send_pi "color loud #{translate_color(color)}"
-        when 'r'
-            send_pi "color rloud #{translate_color(color)}"
-        when 's'
-            send_pi "color loud #{translate_color(color)}"
-            send_pi "color rloud #{translate_color(color2 || color)}"
+        when 'l', 'r'
+            send_pi "color loud #{channel} #{translate_color(color)}"
+        else
+            if color2 && !color2.empty?
+                send_pi "color loud l #{translate_color(color)}"
+                send_pi "color loud r #{translate_color(color2)}"
+            else
+                send_pi "color loud #{translate_color(color)}"
+            end
         end
-    end
-
-    def random_channel
-      ['l', 'r', 's'].sample
     end
 end
 
@@ -190,6 +188,7 @@ check_config
 $slack_client = SlackRTM::Client.new(websocket_url: SlackRTM.get_url(token: $config[:slack_token]))
 $slack_client.on(:message) do |data|
   if data["type"] == "message" && data["channel"] == PUMPKIN_PI_CHANNEL
+    next if data['subtype'] == 'bot_message'
     next if data['ts'].to_f < $slack_login_time
     text = data["text"]
     if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
@@ -198,8 +197,8 @@ $slack_client.on(:message) do |data|
       reply data, $pi.play($4, $1, $2, $3)
     elsif text =~ /\Acandle(?::([^: ]+))\z/i
       reply data, $pi.candle($1)
-    elsif text =~ /\Arandom\z/i
-      reply data, $pi.play
+    elsif text =~ /\Arandom(?::([^: ]+))?\z/i
+      reply data, $pi.play(nil, $1)
     elsif text =~ /\Ahh\z/i
       reply data, $pi.say('Happy Halloween!')
     elsif text =~ /\Ayw\z/i

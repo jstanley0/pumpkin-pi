@@ -16,10 +16,10 @@
 
 LED led;
 
-int dark_color[3] = { 0, 0, 0 };
-int bright_color[3] = { 255, 63, 0 };
-int silent_color[3] = { 0, 0, 0 };
-int loud_colorL[3] = { 128, 224, 255 }, loud_colorR[3] = { 255, 96, 255 };
+int dark_colors[2][3]   = {{0, 0, 0}, {0, 0, 0}};
+int bright_colors[2][3] = {{255, 96, 0}, {255, 96, 0}};
+int silent_colors[2][3] = {{0, 0, 0}, {0, 0, 0}};
+int loud_colors[2][3]   = {{63, 63, 255}, {63, 255, 63}};
 
 volatile bool g_interrupted = false;
 void sig_handler(int signo)
@@ -28,8 +28,6 @@ void sig_handler(int signo)
 }
 
 // max intensity is 32767 (16-bit signed audio)
-// the source colors (above) have an 8-bit range
-// the mixed color elements have a 9-bit range (0..511)
 void mix_colors(int dest_colors[3], int low_color[3], int high_color[3], int sound_intensity)
 {
     for(int i = 0; i < 3; ++i)
@@ -43,15 +41,15 @@ void mix_colors(int dest_colors[3], int low_color[3], int high_color[3], int sou
             dark = high_color[i];
             sound_intensity = 32767 - sound_intensity;
         }
-        dest_colors[i] = dark + (((bright - dark) * sound_intensity) / 16384);
+        dest_colors[i] = dark + (((bright - dark) * sound_intensity) / 32767);
     }
 }
 
 void sound_callback(short soundL, short soundR, void *context)
 {
     int colorsL[3], colorsR[3];
-    mix_colors(colorsL, silent_color, loud_colorL, soundL);
-    mix_colors(colorsR, silent_color, loud_colorR, soundR);
+    mix_colors(colorsL, silent_colors[0], loud_colors[0], soundL);
+    mix_colors(colorsR, silent_colors[1], loud_colors[1], soundR);
     led.set_color(colorsL, colorsR);
 }
 
@@ -69,36 +67,36 @@ void parse_color(int *colors, const char *arg)
 
 int led_test()
 {
-    led.set_color(511, 0, 0);
+    led.set_color(255, 0, 0);
     SDL_Delay(1000);
     led.set_color(0, 0, 0);
     SDL_Delay(100);
-    led.set_color(0, 511, 0);
+    led.set_color(0, 255, 0);
     SDL_Delay(1000);
     led.set_color(0, 0, 0);
     SDL_Delay(100);
-    led.set_color(0, 0, 511);
+    led.set_color(0, 0, 255);
     SDL_Delay(1000);
     led.set_color(0, 0, 0);
     SDL_Delay(100);
-    for(int x = 0; x < 512; ++x) {
+    for(int x = 0; x < 256; ++x) {
         led.set_color(x, x, x);
         SDL_Delay(5);
     }
-    for(int x = 511; x >= 0; --x) {
+    for(int x = 255; x >= 0; --x) {
         led.set_color(x, x, x);
         SDL_Delay(5);
     }
     return 0;
 }
 
-void modulate_candle(int &delta, int colors[3])
+void modulate_candle(int &delta, int colors[3], int channel = 0)
 {
     delta += (rand() % 2048) - 1024;
     if (delta < -8192 || delta > 8192)
         delta = 0;
     int intensity = 16384 + delta;
-    mix_colors(colors, dark_color, bright_color, intensity);
+    mix_colors(colors, dark_colors[channel], bright_colors[channel], intensity);
 }
 
 int candle(int duration = 0)
@@ -110,8 +108,8 @@ int candle(int duration = 0)
     int cycles = 0;
     while(!g_interrupted)
     {
-        modulate_candle(deltaL, colorsL);
-        modulate_candle(deltaR, colorsR);
+        modulate_candle(deltaL, colorsL, 0);
+        modulate_candle(deltaR, colorsR, 1);
         led.set_color(colorsL, colorsR);
         SDL_Delay(5);
         if (duration != 0 && ++cycles >= duration) break;
@@ -188,23 +186,32 @@ static int interactive_thread(void *param)
             }
             else if (command == "color")
             {
-                int *target = NULL;
-
+                std::string color;
+                ss >> color;
                 ss >> arg;
-                if (arg == "dark")
-                    target = dark_color;
-                else if (arg == "bright")
-                    target = bright_color;
-                else if (arg == "silent")
-                    target = silent_color;
-                else if (arg == "loud")
-                    target = loud_colorL;
-                else if (arg == "rloud")
-                    target = loud_colorR;
                 
-                if (target) {
+                bool setL = true, setR = true;
+                if (!arg.empty() && arg[0] != '#') {
+                    if (arg[0] == 'l') setR = false;
+                    else if (arg[0] == 'r') setL = false;
                     ss >> arg;
-                    parse_color(target, arg.c_str());
+                }
+
+                if (color == "dark") {
+                    if (setL) parse_color(dark_colors[0], arg.c_str());
+                    if (setR) parse_color(dark_colors[1], arg.c_str());
+                }
+                else if (color == "bright") {
+                    if (setL) parse_color(bright_colors[0], arg.c_str());
+                    if (setR) parse_color(bright_colors[1], arg.c_str());
+                }
+                else if (color == "silent") {
+                    if (setL) parse_color(silent_colors[0], arg.c_str());
+                    if (setR) parse_color(silent_colors[1], arg.c_str());
+                }
+                else if (color == "loud") {
+                    if (setL) parse_color(loud_colors[0], arg.c_str());
+                    if (setR) parse_color(loud_colors[1], arg.c_str());                    
                 }
             }
             else if (command == "play")
@@ -238,7 +245,7 @@ static int interactive_thread(void *param)
 }
 
 // candle {on|off}
-// color {dark|bright|silent|loud|rloud} #rrggbb
+// color {dark|bright|silent|loud} [l|r|s] #rrggbb
 // play filename
 // exit
 int interactive()
@@ -283,10 +290,14 @@ int main(int argc, char **argv)
     } else if (0 == strcmp(argv[1], "--led-test")) {
         return led_test();
     } else if (0 == strcmp(argv[1], "--candle")) {
-        if (argc >= 3)
-            parse_color(bright_color, argv[2]);
-        if (argc >= 4)
-            parse_color(dark_color, argv[3]);
+        if (argc >= 3) {
+            parse_color(bright_colors[0], argv[2]);
+            parse_color(bright_colors[1], argv[2]);
+        }
+        if (argc >= 4) {
+            parse_color(dark_colors[0], argv[3]);
+            parse_color(dark_colors[1], argv[3]);            
+        }
         int duration = 0;
         if (argc >= 5)
             duration = atoi(argv[4]);
@@ -296,13 +307,16 @@ int main(int argc, char **argv)
 
     const char *sound_file = argv[1];
     if (argc >= 3) {
-        parse_color(loud_colorL, argv[2]);
-        parse_color(loud_colorR, argv[2]);        
+        parse_color(loud_colors[0], argv[2]);
+        parse_color(loud_colors[1], argv[2]);        
     }
-    if (argc >= 4)
-        parse_color(silent_color, argv[3]);
-    if (argc >= 5)
-        parse_color(loud_colorR, argv[4]);
+    if (argc >= 4) {
+        parse_color(silent_colors[0], argv[3]);
+        parse_color(silent_colors[1], argv[3]);        
+    }
+    if (argc >= 5) {
+        parse_color(loud_colors[1], argv[4]);
+    }
 
     try
     {
