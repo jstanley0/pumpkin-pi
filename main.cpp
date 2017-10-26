@@ -92,8 +92,8 @@ int led_test()
 
 void modulate_candle(int &delta, int colors[3], int channel = 0)
 {
-    delta += (rand() % 2048) - 1024;
-    if (delta < -8192 || delta > 8192)
+    delta += (rand() % 3072) - 1536;
+    if (delta < -10240 || delta > 10240)
         delta = 0;
     int intensity = 16384 + delta;
     mix_colors(colors, dark_colors[channel], bright_colors[channel], intensity);
@@ -111,10 +111,10 @@ int candle(int duration = 0)
         modulate_candle(deltaL, colorsL, 0);
         modulate_candle(deltaR, colorsR, 1);
         led.set_color(colorsL, colorsR);
-        SDL_Delay(5);
+        SDL_Delay(20);
         if (duration != 0 && ++cycles >= duration) break;
     }
-
+    led.set_color(dark_colors[0], dark_colors[1]);
     return 0;
 }
 
