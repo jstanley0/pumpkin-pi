@@ -107,11 +107,18 @@ $slack_client.on(:message) do |data|
     next if data['ts'].to_f < $slack_login_time
     text = data["text"]
     if text =~ /\Asay(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
-      reply data, $pi.say($5, $1, $2, $3, $4)
+      $pi.color('loud', $1, $3, $4) unless $3.nil? || $3.empty?
+      reply data, $pi.say($5, $1, $2)
     elsif text =~ /\Aplay(?::([^: ]+))?(?::([^: ]+))?(?::([^: ]+))? (.+)\z/i
-      reply data, $pi.play($4, $1, $2, $3)
-    elsif text =~ /\Acandle(?::([^: ]+))\z/i
-      reply data, $pi.candle($1)
+      $pi.color('loud', $1, $2, $3) unless $2.nil? || $2.empty?
+      reply data, $pi.play($4, $1)
+    elsif text =~ /\Acandle(?::([^: ]+))? (.+)\z/i
+      result = if %w(off on).include?($2)
+        $pi.candle($2)
+      else
+        $pi.color('bright', $1, $2)
+      end
+      reply data, result
     elsif text =~ /\Arandom(?::([^: ]+))?\z/i
       reply data, $pi.play(nil, $1)
     elsif text =~ /\Ahh\z/i
