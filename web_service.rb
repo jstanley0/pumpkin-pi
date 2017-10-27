@@ -7,6 +7,7 @@ require_relative 'common.rb'
 $pi = PiWrapper.new
 
 get '/' do
+    erb :form
 end
 
 post '/say' do
@@ -22,7 +23,7 @@ post '/play' do
     if params[:color]
         $pi.color 'loud', channel, params[:color], params[:color2]    
     end
-    $pi.play params[:sound], channel
+    $pi.play params[:text], channel
 end
 
 post '/candle' do

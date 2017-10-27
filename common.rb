@@ -34,7 +34,7 @@ class PiWrapper
         file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
         if file
             send_pi "play #{channel} #{SOUND_PATH}/#{file}"
-            "playing \"#{file}\""
+            file
         else
             "couldn't find that sound"
         end

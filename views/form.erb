@@ -1,0 +1,49 @@
+<div class="pinned">
+</div>
+
+<div class="history">
+</div>
+
+<div class="main-form">
+    <form>
+        <div class="form-group">
+            <span class="colorpicker ui-front">
+                <select id="color_select" name="color">
+                    <option value="off">off</option>
+                    <% %w(red orange yellow green cyan blue purple white).each do |color| %>
+                        <option value="<%= color %>"><%= color %></option>
+                    <% end %>
+                </select>
+            </span>
+
+            <span class="colorpicker ui-front">
+                <select id="color2_select" name="color2">
+                    <option value="off">off</option>
+                    <% %w(red orange yellow green cyan blue purple white).each do |color| %>
+                        <option value="<%= color %>"><%= color %></option>
+                    <% end %>
+                </select>
+            </span> 
+
+            <span class="btn-group btn-group-sm" data-toggle="buttons">
+                <label class="btn btn-default active">
+                    <input type="radio" name="method" value="say" checked>
+                    <span class="glyphicon glyphicon-comment" aria-hidden="true"></span><span class="sr-only">text</span>            
+                </label>
+                <label class="btn btn-default">
+                    <input type="radio" name="method" value="play">
+                    <span class="glyphicon glyphicon-volume-up" aria-hidden="true"></span><span class="sr-only">sound</span>            
+                </label>
+            </span>
+        </div>
+
+        <div class="form-group">
+            <div class="input-group">
+                <input name="text" class="form-control" type="text">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit">Send</button>
+                </span>
+            </div>
+        </div>
+    </form>
+</div>

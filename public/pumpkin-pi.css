@@ -1,0 +1,29 @@
+.main-form {
+    padding: 10px;
+}
+
+.color-sel {
+    margin: 0 4px 0 4px;
+    border: 1px solid black;
+    width: 20px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.color-menu-item {
+    width: 100%;
+    display: inline-block;
+}
+
+.colorpicker .ui-menu-item {
+    text-align: center;
+}
+
+/* wrap nicely: https://github.com/twbs/bootstrap/issues/16064 */
+.form-inline {
+    margin: -5px -5px;
+}
+.form-inline .form-group {
+    margin: 5px 5px;
+}
