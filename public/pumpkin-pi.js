@@ -32,7 +32,7 @@ function buildMenuItem(item) {
 function buildColorPicker(name, defaultColor) {
     var sel = 'select[name="' + name + '"]';
     $(sel).selectmenu({
-        width: 75,
+        width: 65,
         select: function(event, ui) {
             var box = ui.item.element.parent().attr('name');
             localStorage[box] = ui.item.value;
