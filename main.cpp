@@ -196,6 +196,7 @@ static int interactive_thread(void *param)
                     else if (arg[0] == 'r') setL = false;
                     ss >> arg;
                 }
+                //std::cerr << color << ": " << setL << ", " << setR << "; " << arg << std::endl; 
 
                 if (color == "dark") {
                     if (setL) parse_color(dark_colors[0], arg.c_str());

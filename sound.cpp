@@ -36,7 +36,7 @@ void Sound::set_callback(callback cb, void *context)
         short sample = samples[i];
         if (sample < 0)
             sample = -sample;
-        short *max = ((i & 1) ? &maxL : &maxR);
+        short *max = ((i & 1) ? &maxR : &maxL);
         if (samples[i] > *max)
             *max = samples[i];
     }

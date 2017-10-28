@@ -5,7 +5,7 @@
 </div>
 
 <div class="main-form">
-    <form>
+    <form id="main-form">
         <div class="form-group">
             <span class="colorpicker ui-front">
                 <select id="color_select" name="color">
@@ -27,7 +27,7 @@
 
             <span class="btn-group btn-group-sm" data-toggle="buttons">
                 <label class="btn btn-default active">
-                    <input type="radio" name="method" value="say" checked>
+                    <input id="tts_radio" type="radio" name="method" value="say" checked>
                     <span class="glyphicon glyphicon-comment" aria-hidden="true"></span><span class="sr-only">text</span>            
                 </label>
                 <label class="btn btn-default">
@@ -39,7 +39,7 @@
 
         <div class="form-group">
             <div class="input-group">
-                <input name="text" class="form-control" type="text">
+                <input id="main-input" name="text" class="form-control" type="text">
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="submit">Send</button>
                 </span>

@@ -52,7 +52,32 @@ function buildColorPicker(name, defaultColor) {
     $(sel).selectmenu('refresh');
 }
 
+function formSubmit(event) {
+    event.preventDefault();
+    var lcolor = $('#color_select').val();
+    var rcolor = $('#color2_select').val();
+    var url = $('#tts_radio').is(':checked') ? '/say' : '/play';
+    var data = { text: $('#main-input').val() };
+    if (rcolor == 'off') {
+        data.channel = 'l';
+        data.color = lcolor;
+    } else if (lcolor == 'off') {
+        data.channel = 'r';
+        data.color = rcolor;
+    } else {
+        data.channel = 's';
+        data.color = lcolor;
+        data.color2 = rcolor;
+    }
+    $.ajax(url, { method: 'POST', data: data }).done(function(data) {
+        console.log(data);
+        $('#main-input').select().focus();
+    });
+}
+
 $(document).ready(function() {
     buildColorPicker('color', 'cyan');
     buildColorPicker('color2', 'purple');
+    $('#main-input').focus();
+    $("#main-form").on("submit", formSubmit);
 });
