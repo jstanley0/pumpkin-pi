@@ -75,6 +75,7 @@ function updateHistory(url, lcolor, rcolor, text) {
     var $item = createHistoryElement(item);
     $("#history").prepend($item);
     saveHistory();
+    $("#main-input").val('').focus();
 }
 
 function mapColor(color) {
