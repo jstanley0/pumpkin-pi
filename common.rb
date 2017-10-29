@@ -30,11 +30,10 @@ class PiWrapper
     # file can be a partial name; if more than one match is found, a file will be chosen randomly
     def play(file = nil, channel = 's')
         channel = 's' if channel.nil? || channel.empty?
-        file ||= ''
-        file = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? file.downcase }.sample
-        if file
-            send_pi "play #{channel} #{SOUND_PATH}/#{file}"
-            file
+        path = find_file(file)
+        if path
+            send_pi "play #{channel} #{path}" 
+            File.basename(path)
         else
             "couldn't find that sound"
         end
@@ -86,5 +85,15 @@ class PiWrapper
         @pi.puts command
         @pi.flush
         command
+    end
+
+    def find_file(name)
+        name ||= ''
+        path = File.join(SOUND_PATH, name)
+        unless File.exist?(path)
+            name = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? name.downcase }.sample
+            path = File.join(SOUND_PATH, name)
+        end
+        path        
     end
 end
