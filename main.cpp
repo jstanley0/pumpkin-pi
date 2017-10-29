@@ -21,6 +21,9 @@ int bright_colors[2][3] = {{255, 96, 0}, {255, 96, 0}};
 int silent_colors[2][3] = {{0, 0, 0}, {0, 0, 0}};
 int loud_colors[2][3]   = {{63, 63, 255}, {63, 255, 63}};
 
+int candle_intensity[2] = {0, 0};   // 0 is half; negative=dimmer; positive=brighter
+char playing_channel = 's';         // or 'l' or 'r', if only one channel is playing
+
 volatile bool g_interrupted = false;
 void sig_handler(int signo)
 {
@@ -43,14 +46,6 @@ void mix_colors(int dest_colors[3], int low_color[3], int high_color[3], int sou
         }
         dest_colors[i] = dark + (((bright - dark) * sound_intensity) / 32767);
     }
-}
-
-void sound_callback(short soundL, short soundR, void *context)
-{
-    int colorsL[3], colorsR[3];
-    mix_colors(colorsL, silent_colors[0], loud_colors[0], soundL);
-    mix_colors(colorsR, silent_colors[1], loud_colors[1], soundR);
-    led.set_color(colorsL, colorsR);
 }
 
 void parse_color(int *colors, const char *arg)
@@ -90,12 +85,12 @@ int led_test()
     return 0;
 }
 
-void modulate_candle(int &delta, int colors[3], int channel = 0)
+void modulate_candle(int colors[3], int channel = 0)
 {
-    delta += (rand() % 3072) - 1536;
-    if (delta < -10240 || delta > 10240)
-        delta = 0;
-    int intensity = 16384 + delta;
+    candle_intensity[channel] += (rand() % 3072) - 1536;
+    if (candle_intensity[channel] < -10240 || candle_intensity[channel] > 10240)
+        candle_intensity[channel] = 0;
+    int intensity = 16384 + candle_intensity[channel];
     mix_colors(colors, dark_colors[channel], bright_colors[channel], intensity);
 }
 
@@ -104,21 +99,46 @@ int candle(int duration = 0)
     int colorsL[3], colorsR[3];
     srand((unsigned)time(NULL));
 
-    int deltaL = 0, deltaR = 0;
     int cycles = 0;
     while(!g_interrupted)
     {
-        modulate_candle(deltaL, colorsL, 0);
-        modulate_candle(deltaR, colorsR, 1);
+        modulate_candle(colorsL, 0);
+        modulate_candle(colorsR, 1);
         led.set_color(colorsL, colorsR);
         SDL_Delay(20);
         if (duration != 0 && ++cycles >= duration) break;
     }
-    led.set_color(dark_colors[0], dark_colors[1]);
     return 0;
 }
 
 bool g_candle_on = true;
+
+void enable_candle(bool enabled) 
+{
+    g_candle_on = enabled;
+    if (!g_candle_on) {
+        led.set_color(dark_colors[0], dark_colors[1]);
+    }
+}
+
+void sound_callback(short soundL, short soundR, void *context)
+{
+    int colorsL[3], colorsR[3];
+
+    if (g_candle_on && playing_channel == 'r') {
+        modulate_candle(colorsL, 0);
+    } else {
+        mix_colors(colorsL, silent_colors[0], loud_colors[0], soundL);
+    }
+    
+    if (g_candle_on && playing_channel == 'l') {
+        modulate_candle(colorsR, 1);
+    } else {
+        mix_colors(colorsR, silent_colors[1], loud_colors[1], soundR);
+    }
+    
+    led.set_color(colorsL, colorsR);
+}
 
 SDL_mutex *mutex;
 class ScopedMutexLock
@@ -182,7 +202,7 @@ static int interactive_thread(void *param)
             if (command == "candle")
             {
                 ss >> arg;
-                g_candle_on = (arg == "on");
+                enable_candle(arg == "on");
             }
             else if (command == "color")
             {
@@ -219,13 +239,14 @@ static int interactive_thread(void *param)
             {
                 try
                 {
-                    ss >> arg;                    
+                    ss >> arg;
+                    playing_channel = arg[0];
                     std::string filename;
                     while(ss.peek() == ' ')
                         ss.get();
                     getline(ss, filename);
                     sound.load_file(filename.c_str());
-                    sound.play(arg[0]);
+                    sound.play(playing_channel);
                 }
                 catch(SDLError &error)
                 {
