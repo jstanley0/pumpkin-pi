@@ -63,13 +63,13 @@
 }
 
 .hist-elem .play-button {
-    margin-right: 10px;
+    margin-right: 5px;
 }
 
 .hist-elem .text {
     flex-grow: 1;
-    font-size: 18px;
-    margin-left: 15px;
+    font-size: 14px;
+    margin-left: 10px;
 }
 
 .hist-elem button, .hist-elem .hist-swatch {

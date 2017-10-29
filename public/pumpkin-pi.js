@@ -13,17 +13,17 @@ DEFAULT_HISTORY = [
     { url: '/say', lcolor: 'cyan', rcolor: 'off', text: "Hello! I'm the pumpkin down here.", pinned: true },
     { url: '/say', lcolor: 'green', rcolor: 'off', text: "Happy halloween!", pinned: true },
     { url: '/say', lcolor: 'yellow', rcolor: 'off', text: "You're welcome! Don't eat it all at once.", pinned: true },
-    { url: '/play', lcolor: 'off', rcolor: 'red', text: "Evil Laugh", pinned: true },
+    { url: '/play', lcolor: 'off', rcolor: 'red', text: "evil_laugh.mp3", pinned: true },
     { url: '/play', lcolor: 'off', rcolor: 'green', text: "sb_duck.mp3", pinned: true }
 ];
 
 function buildPlayButton(url) {
     var $icon = $('<span class="glyphicon glyphicon-' + ((url == '/say') ? 'comment' : 'volume-up') + '">');
-    return $("<button class='btn btn-" + ((url == '/say') ? 'primary' : 'danger') + " btn-lg play-button'>").append($icon);
+    return $("<button class='btn btn-" + ((url == '/say') ? 'primary' : 'danger') + " play-button'>").append($icon);
 }
 
 function buildPinButton(pinned) {
-    return $("<button class='btn btn-" + (pinned ? 'primary' : 'default') + " btn-lg pin-button'>").append($("<span class='glyphicon glyphicon-pushpin'>"));    
+    return $("<button class='btn btn-" + (pinned ? 'primary' : 'default') + " pin-button'>").append($("<span class='glyphicon glyphicon-pushpin'>"));    
 }
 
 function createHistoryElement(item) {
@@ -215,6 +215,7 @@ function togglePinHistoryItem(event) {
 
 function playHistoryItem(event) {
     var $item = $(event.target).closest(".hist-elem");
+    $item.find('.play-button').css('opacity', '0.5');
     var item = parseHistoryElement($item);
     sendRequest(item.url, item.lcolor, item.rcolor, item.text);
 }
