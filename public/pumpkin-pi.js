@@ -6,14 +6,15 @@ COLORMAP = {
 };
 
 MAX_HISTORY_SIZE = 25;
+HISTORY_VERSION = "1";
 
 // initial history items (these will be replaced as the user types messages)
 DEFAULT_HISTORY = [
-    { url: '/say', lcolor: 'cyan', rcolor: 'off', text: "Hello! I'm the pumpkin down here." },
-    { url: '/say', lcolor: 'green', rcolor: 'off', text: "Happy halloween!" },
-    { url: '/say', lcolor: 'yellow', rcolor: 'off', text: "You're welcome! Don't eat it all at once." },    
-    { url: '/play', lcolor: 'off', rcolor: 'red', text: "Evil Laugh" },
-    { url: '/play', lcolor: 'off', rcolor: 'green', text: "sb_duck.mp3" },
+    { url: '/say', lcolor: 'cyan', rcolor: 'off', text: "Hello! I'm the pumpkin down here.", pinned: true },
+    { url: '/say', lcolor: 'green', rcolor: 'off', text: "Happy halloween!", pinned: true },
+    { url: '/say', lcolor: 'yellow', rcolor: 'off', text: "You're welcome! Don't eat it all at once.", pinned: true },
+    { url: '/play', lcolor: 'off', rcolor: 'red', text: "Evil Laugh", pinned: true },
+    { url: '/play', lcolor: 'off', rcolor: 'green', text: "sb_duck.mp3", pinned: true }
 ];
 
 function buildPlayButton(url) {
@@ -21,26 +22,33 @@ function buildPlayButton(url) {
     return $("<button class='btn btn-" + ((url == '/say') ? 'primary' : 'danger') + " btn-lg play-button'>").append($icon);
 }
 
-function buildCloseButton() {
-    return $("<button class='btn btn-default btn-lg close-button'>").append($("<span class='glyphicon glyphicon-remove'>"));
+function buildPinButton(pinned) {
+    return $("<button class='btn btn-" + (pinned ? 'primary' : 'default') + " btn-lg pin-button'>").append($("<span class='glyphicon glyphicon-pushpin'>"));    
 }
 
 function createHistoryElement(item) {
     var $el = $('<div class="hist-elem">');
+    if (item.pinned) {
+        $el.addClass('pinned');
+    }
     $el.append(buildPlayButton(item.url));
     $el.append(buildColorItem(item.lcolor, 'hist-swatch'));
     $el.append(buildColorItem(item.rcolor, 'hist-swatch'));
     $el.append($('<span class="text">').text(item.text).addClass((item.url == '/play') ? 'sound-effect' : 'to-speech'));
-    $el.append(buildCloseButton());
+    $el.append(buildPinButton(item.pinned));
     $el.data('text', item.text);
     $el.data('url', item.url);
     $el.data('lcolor', item.lcolor);
     $el.data('rcolor', item.rcolor);
+    $el.data('pinned', item.pinned);
     return $el;
 }
 
 function loadHistory() {
-    var history = localStorage.history ? JSON.parse(localStorage.history) : DEFAULT_HISTORY;
+    var history = (localStorage.history_version == HISTORY_VERSION) ? JSON.parse(localStorage.history) : DEFAULT_HISTORY;
+    if (history.length == 0) {
+        history = DEFAULT_HISTORY;
+    }
     var $historyContainer = $("#history");
     history.forEach(function(item) {
         $historyContainer.append(createHistoryElement(item));
@@ -49,16 +57,17 @@ function loadHistory() {
 
 function parseHistoryElement(el) {
     var $el = $(el);
-    var item = { url: $el.data('url'), lcolor: $el.data('lcolor'), rcolor: $el.data('rcolor'), text: $el.data('text') };
+    var item = { url: $el.data('url'), lcolor: $el.data('lcolor'), rcolor: $el.data('rcolor'), text: $el.data('text'), pinned: $el.data('pinned') };
     return item;
 }
 
 function saveHistory() {
     var history = [];
-    $("#history .hist-elem").each(function(index, el) {
+    $("#history .hist-elem.pinned").each(function(index, el) {
         history.push(parseHistoryElement(el));
     });
     localStorage.history = JSON.stringify(history);
+    localStorage.history_version = HISTORY_VERSION;
 }
 
 function findHistoryElement(url, text) {
@@ -68,12 +77,32 @@ function findHistoryElement(url, text) {
     });
 }
 
+function firstNonPinnedElement() {
+    return $('#history .hist-elem:not(.pinned)').first();    
+}
+
+function insertHistoryItemBefore($item, $before) {
+    if ($before.length) {
+        $item.insertBefore($before);
+    } else {
+        $("#history").append($item);
+    }
+}
+
 function updateHistory(url, lcolor, rcolor, text) {
-    findHistoryElement(url, text).remove();
-    $('#history .hist-elem:nth-child(' + MAX_HISTORY_SIZE + ')').remove();
-    var item = { url: url, lcolor: lcolor, rcolor: rcolor, text: text };
+    var pinned = false, $insertBefore;
+    var $existingEl = findHistoryElement(url, text);
+    if ($existingEl.length) {
+        pinned = $existingEl.data('pinned');
+        $insertBefore = $existingEl.next();
+        $existingEl.remove();
+    } else {
+        $insertBefore = firstNonPinnedElement();
+        $('#history .hist-elem:nth-child(' + MAX_HISTORY_SIZE + ')').remove();
+    }
+    var item = { url: url, lcolor: lcolor, rcolor: rcolor, text: text, pinned: pinned };
     var $item = createHistoryElement(item);
-    $("#history").prepend($item);
+    insertHistoryItemBefore($item, $insertBefore);
     saveHistory();
     $("#main-input").val('').focus();
 }
@@ -156,17 +185,30 @@ function formSubmit(event) {
     return sendRequest(url, lcolor, rcolor, text);
 }
 
-function removeHistoryItem(event) {
+function moveItemBelowPinned($item) {
+    $item.detach();
+    insertHistoryItemBefore($item, firstNonPinnedElement());
+}
+
+function pinHistoryItem($item) {
+    $item.data('pinned', true).addClass('pinned');
+    $item.find('.pin-button').removeClass('btn-default').addClass('btn-primary');
+    moveItemBelowPinned($item);
+}
+
+function unpinHistoryItem($item) {
+    $item.data('pinned', false).removeClass('pinned');
+    $item.find('.pin-button').removeClass('btn-primary').addClass('btn-default');
+    moveItemBelowPinned($item);
+}
+
+function togglePinHistoryItem(event) {
     var $item = $(event.target).closest(".hist-elem");
-    var $to_focus = $item.next();
-    if ($to_focus.length == 0) {
-        $to_focus = $item.prev();
-    }
-    $item.remove();
-    if ($to_focus.length > 0) {
-        $to_focus.find(".close-button").focus();
+    var pinned = $item.data('pinned');
+    if (pinned) {
+        unpinHistoryItem($item);
     } else {
-        $("#main-input").focus();
+        pinHistoryItem($item);
     }
     saveHistory();
 }
@@ -182,7 +224,7 @@ $(document).ready(function() {
     buildColorPicker('color2', 'purple');
     $('#main-input').focus();
     $("#main-form").on("submit", formSubmit);
-    $("#history").on("click", ".close-button", removeHistoryItem);
+    $("#history").on("click", ".pin-button", togglePinHistoryItem);
     $("#history").on("click", ".play-button", playHistoryItem);
     loadHistory();
 });
