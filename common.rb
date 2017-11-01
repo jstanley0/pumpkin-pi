@@ -90,7 +90,7 @@ class PiWrapper
     def find_file(name)
         name ||= ''
         path = File.join(SOUND_PATH, name)
-        unless File.exist?(path)
+        unless File.file?(path)
             name = Dir.entries(SOUND_PATH).select { |sound_file| sound_file.downcase.include? name.downcase }.sample
             path = File.join(SOUND_PATH, name)
         end

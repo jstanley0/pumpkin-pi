@@ -176,12 +176,29 @@ function sendRequest(url, lcolor, rcolor, text) {
     });
 }
 
+function selectIndex(name, index) {
+    var $el = $("select[name=" + name + "]");
+    $el[0].selectedIndex = index;
+    $el.selectmenu('refresh');
+}
+
+function processTextInput() {
+    var text = $('#main-input').val();
+    var match = text.match("^([0-9])([0-9]):");
+    if (match) {
+        selectIndex("color", match[1]);
+        selectIndex("color2", match[2]);
+        text = text.substr(3);
+    }
+    return text;
+}
+
 function formSubmit(event) {
     event.preventDefault();
+    var text = processTextInput();
     var lcolor = $('#color_select').val();
     var rcolor = $('#color2_select').val();
     var url = $('#tts_radio').is(':checked') ? '/say' : '/play';
-    var text = $('#main-input').val();
     return sendRequest(url, lcolor, rcolor, text);
 }
 
